@@ -1,0 +1,10 @@
+[API_KEYS]
+# NOAA API Token - Get from: https://www.ncdc.noaa.gov/cdo-web/token
+noaa_token = YOUR_NOAA_TOKEN_HERE
+
+# USGS API Key - Get free API key from: https://api.data.gov/signup/ for higher rate limits
+usgs_api_key = YOUR_USGS_API_KEY_HERE
+
+[DATA_PATHS]
+# Base directory for storing raw data
+raw_data_dir = /path/to/your/raw_data_directory
