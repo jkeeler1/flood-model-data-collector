@@ -5,7 +5,7 @@ This script runs the flood dataset builder to collect historical flood data
 from NOAA, NWS, and USGS APIs for machine learning model training.
 """
 
-from app.flood_dataset import build_dataset
+from flood_dataset import build_dataset
 
 def main():
     """Main entry point for the flood model dataset builder."""

@@ -2,11 +2,29 @@ import argparse
 import sys
 from typing import Dict, Any
 
+# Valid US state names (full names)
+VALID_STATES = {
+    "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut",
+    "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana",
+    "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts",
+    "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska",
+    "Nevada", "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina",
+    "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island",
+    "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", "Vermont",
+    "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming"
+}
+
 
 def validate_arguments(args: argparse.Namespace) -> None:
     if args.county and not args.state:
         print("ERROR: If you specify a county (--county), you must also specify a state (--state)")
         print("Example: --county 'Travis' --state 'Texas'")
+        sys.exit(1)
+    
+    if args.state and args.state not in VALID_STATES:
+        print(f"ERROR: Invalid state name: '{args.state}'")
+        print("Please use the full state name (e.g., 'Texas', 'California', 'Florida')")
+        print("Valid states include:", ", ".join(sorted(VALID_STATES)))
         sys.exit(1)
     
     if args.months < 1 or args.months > 12:

@@ -1,4 +1,5 @@
 import os
+import sys
 import requests
 import pandas as pd
 from datetime import datetime, timedelta
@@ -79,6 +80,7 @@ def load_usgs_stations():
         "Alabama": "01", "Arkansas": "05"
     }
     
+
     if TARGET_STATE and TARGET_STATE in state_name_to_fips:
         # Only download stations for the target state
         state_codes = [state_name_to_fips[TARGET_STATE]]
@@ -90,12 +92,13 @@ def load_usgs_stations():
     
     for state_code in state_codes:
         try:
-            print(f"  Getting stations for state {state_code}...")
+            print(f"  Getting stations for state {state_code} and county {TARGET_COUNTY}...")
             endpoint = "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items"
             params = {
                 "state_code": state_code,
                 "site_type_code": "ST",  # Stream stations
-                "limit": 5000  # Get up to 5000 stations per state
+                "limit": 5000,  # Get up to 5000 stations per state
+                "county_name": TARGET_COUNTY
             }
             
             # Add API key if available for higher rate limits
@@ -106,6 +109,11 @@ def load_usgs_stations():
                 r = requests.get(endpoint, params=params, timeout=30)
                 r.raise_for_status()
                 data = r.json()
+                
+                if (data.get("numberReturned") == 0):
+                    print(f"    No stations found for state {state_code} and county {TARGET_COUNTY}")
+                    print("❌ Cannot proceed without water stations. Exiting program.")
+                    sys.exit(1)
             except requests.exceptions.HTTPError as e:
                 if "429" in str(e):
                     print(f"    Rate limited downloading stations for state {state_code}, waiting 3 seconds...")
@@ -126,6 +134,7 @@ def load_usgs_stations():
             
             for feature in data.get("features", []):
                 try:
+                    print(feature)
                     props = feature["properties"]
                     geom = feature["geometry"]
                     

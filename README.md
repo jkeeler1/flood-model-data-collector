@@ -20,10 +20,10 @@ source .venv/bin/activate
 2. **Install dependencies**
 
 ```bash
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 
-2. **Setup your environment variables**
+3. **Setup your environment variables**
 
 Setup your config.ini from the template file 
 ```python
@@ -40,24 +40,15 @@ Run the dataset builder with optional filters:
 python app/flood_dataset.py
 ```
 
-### 2. Single county (e.g., Travis County), first 2 months for testing
+### 2. Single county (e.g., Travis County), first 2 months of the last 3 years
 
 ```bash
-python app/flood_dataset.py --county "Travis" --months 2
+python app/flood_dataset.py --county "Travis" --state 'Texas' --months 2 --years 3
 ```
 
-### 3. Single state (e.g., Texas), full 12 months
+### 3. Single state (e.g., Texas), full 12 months for the last 1 year
 
 ```bash
-python app/flood_dataset.py --state "Texas" --months 12
+python app/flood_dataset.py --state "Texas" --months 12 --years 1
 ```
 
----
-
-## Data Storage and Caching
-
-- **Raw data storage:** `/Users/jkeeler/dev/ai/models/flood_model/raw_data`
-- **Caching:** NWS alerts and USGS stations are cached in `raw_data/cache/` to avoid re-downloading
-- **Negative samples:** Generated automatically by shifting locations and dates from positive flood alerts
-
----
