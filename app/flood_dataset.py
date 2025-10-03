@@ -21,10 +21,10 @@ USGS_API_KEY = api_config['usgs_api_key']
 RAW_DATA_DIR = api_config['raw_data_dir']
 CACHE_DIR = os.path.join(RAW_DATA_DIR, "cache")
 NWS_CACHE_DIR = os.path.join(CACHE_DIR, "nws")
-USGS_CACHE_FILE = os.path.join(CACHE_DIR, "usgs_stations.json")
 PRECIPITATION_CACHE_FILE = os.path.join(CACHE_DIR, "precipitation.json")
 ELEVATION_CACHE_FILE = os.path.join(CACHE_DIR, "elevation.json")
 GAGE_HEIGHT_CACHE_FILE = os.path.join(CACHE_DIR, "gage_height.json")
+USGS_CACHE_FILE = os.path.join(CACHE_DIR, "usgs_stations.json")
 OUTPUT_FILE = os.path.join(RAW_DATA_DIR, "flood_dataset.csv")
 
 os.makedirs(NWS_CACHE_DIR, exist_ok=True)
@@ -32,13 +32,12 @@ os.makedirs(CACHE_DIR, exist_ok=True)
 
 # ---------- Argument parsing ----------
 args = parse_arguments()
-TARGET_COUNTY = args['county']
 TARGET_STATE = args['state']
 MONTH_LIMIT = args['months']
 YEARS_BACK = args['years']
 
 # Print filter settings
-print_filter_settings(TARGET_COUNTY, TARGET_STATE, MONTH_LIMIT, YEARS_BACK)
+print_filter_settings(TARGET_STATE, MONTH_LIMIT, YEARS_BACK)
 
 # Calculate years range after getting YEARS_BACK
 current_year = datetime.now().year
@@ -63,12 +62,7 @@ USGS_STATIONS = []
 
 def load_usgs_stations():
     global USGS_STATIONS
-    if os.path.exists(USGS_CACHE_FILE):
-        with open(USGS_CACHE_FILE, "r") as f:
-            USGS_STATIONS = json.load(f)
-        print(f"Loaded {len(USGS_STATIONS)} USGS stations from cache.")
-        return
-    
+
     print("Downloading USGS station list using new OGC API...")
     USGS_STATIONS = []
     
@@ -80,7 +74,6 @@ def load_usgs_stations():
         "Alabama": "01", "Arkansas": "05"
     }
     
-
     if TARGET_STATE and TARGET_STATE in state_name_to_fips:
         # Only download stations for the target state
         state_codes = [state_name_to_fips[TARGET_STATE]]
@@ -92,13 +85,12 @@ def load_usgs_stations():
     
     for state_code in state_codes:
         try:
-            print(f"  Getting stations for state {state_code} and county {TARGET_COUNTY}...")
+            print(f"  Getting stations for state {state_code}...")
             endpoint = "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items"
             params = {
                 "state_code": state_code,
                 "site_type_code": "ST",  # Stream stations
-                "limit": 5000,  # Get up to 5000 stations per state
-                "county_name": TARGET_COUNTY
+                "limit": 5000  # Get up to 5000 stations per state
             }
             
             # Add API key if available for higher rate limits
@@ -111,7 +103,7 @@ def load_usgs_stations():
                 data = r.json()
                 
                 if (data.get("numberReturned") == 0):
-                    print(f"    No stations found for state {state_code} and county {TARGET_COUNTY}")
+                    print(f"    No stations found for state {state_code}")
                     print("❌ Cannot proceed without water stations. Exiting program.")
                     sys.exit(1)
             except requests.exceptions.HTTPError as e:
@@ -448,10 +440,8 @@ def fetch_historical_flood_alerts(year, month):
                     if len(alerts) < 3:  # Only print first few for debugging
                         print(f"      Found flood alert: {event.get('locations', 'No location')} on {issue_date.date()}")
                     
-                    # Filter by county/state if specified
+                    # Filter by state if specified
                     locations = event.get("locations", "")
-                    if TARGET_COUNTY and TARGET_COUNTY not in locations:
-                        continue
                     if TARGET_STATE:
                         # Handle state name to abbreviation mapping
                         state_abbrevs = {
@@ -553,7 +543,7 @@ def build_dataset():
     for year in YEARS:
         for month in range(1, MONTH_LIMIT + 1):
             alerts = fetch_historical_flood_alerts(year, month)
-            desc = TARGET_COUNTY or TARGET_STATE or "all areas"
+            desc = TARGET_STATE or "all areas"
             print(f"{year}-{month:02d}: {len(alerts)} flood-related alerts found in {desc}")
 
             for alert in tqdm(alerts):
@@ -634,4 +624,18 @@ def build_dataset():
     print(f"✅ Dataset saved to {OUTPUT_FILE}, {len(df)} rows total")
 
 if __name__ == "__main__":
+    # Check if --help was requested before building dataset
+    if "--help" in sys.argv or "-h" in sys.argv:
+        # Import here to avoid circular imports
+        from arg_parser import parse_arguments
+        # Create a temporary parser just to show help
+        import argparse
+        parser = argparse.ArgumentParser(description="Build flood dataset with historical data from NOAA, NWS, and USGS APIs")
+        parser.add_argument("--state", type=str, default=None, help="Name of state to filter")
+        parser.add_argument("--months", type=int, default=12, help="Number of months per year to process (1-12)")
+        parser.add_argument("--years", type=int, default=3, help="Number of years to process (1-3)")
+        parser.print_help()
+        sys.exit(0)
+    
     build_dataset()
+
