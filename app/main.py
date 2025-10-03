@@ -4,7 +4,7 @@ Flood Model - Main Entry Point
 This script runs the flood dataset builder to collect historical flood data
 from NOAA, NWS, and USGS APIs for machine learning model training.
 """
-
+from app.flood_dataset import FloodDatasetBuilder
 from flood_dataset import build_dataset
 
 def main():
@@ -14,6 +14,7 @@ def main():
     print("-" * 60)
     
     try:
+        FloodDatasetBuilder builder = new FloodDatasetBuilder()
         build_dataset()
         print("\n✅ Dataset building completed successfully!")
     except Exception as e:
